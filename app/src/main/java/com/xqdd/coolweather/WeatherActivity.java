@@ -1,5 +1,6 @@
 package com.xqdd.coolweather;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -24,6 +25,7 @@ import com.bumptech.glide.Glide;
 import com.xqdd.coolweather.gson.Daily;
 import com.xqdd.coolweather.gson.Suggestion;
 import com.xqdd.coolweather.gson.Weather;
+import com.xqdd.coolweather.service.AutoUpdateService;
 import com.xqdd.coolweather.utils.HttpUtil;
 import com.xqdd.coolweather.utils.Utility;
 
@@ -171,7 +173,7 @@ public class WeatherActivity extends AppCompatActivity {
 
         editor.putString("weatherCode", weatherCode);
         editor.apply();
-        this.weatherCode=weatherCode;
+        this.weatherCode = weatherCode;
 
         /**
          * 获取今日天气
@@ -278,6 +280,10 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     private void showWeatherInfo(Weather weather) {
+
+        Intent intent = new Intent(this, AutoUpdateService.class);
+        startService(intent);
+
         String cityName = weather.getWeatherNow().location.name;
         String updateTime = weather.getWeatherNow().lastUpdate;
 
