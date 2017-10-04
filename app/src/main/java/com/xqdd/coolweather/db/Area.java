@@ -14,17 +14,6 @@ public class Area extends DataSupport {
     private Integer cityId;
 
 
-    private Integer areaId;
-
-
-    public Integer getAreaId() {
-        return areaId;
-    }
-
-    public void setAreaId(Integer areaId) {
-        this.areaId = areaId;
-    }
-
     public Integer getCityId() {
         return cityId;
     }

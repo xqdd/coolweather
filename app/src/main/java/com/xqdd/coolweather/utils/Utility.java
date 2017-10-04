@@ -86,7 +86,6 @@ public class Utility {
                     JSONObject areaObject = areaArray.getJSONObject(i);
                     Area area = new Area();
                     area.setCityId(cityId);
-                    area.setAreaId(areaObject.getInt("id"));
                     area.setName(areaObject.getString("name"));
                     area.setCode(areaObject.getString("code"));
                     area.save();
