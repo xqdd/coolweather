@@ -94,10 +94,19 @@ public class ChooseAreaFragment extends Fragment {
                     queryAreas();
                 } else if (currentLevel == LEVEL_AREA) {
                     String weatherCode = areas.get(position).getCode();
-                    Intent intent = new Intent(getActivity(), WeatherActivity.class);
-                    intent.putExtra("weatherCode", weatherCode);
-                    startActivity(intent);
-                    getActivity().finish();
+
+                    if (getActivity() instanceof MainActivity) {
+                        Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                        intent.putExtra("weatherCode", weatherCode);
+                        startActivity(intent);
+                        getActivity().finish();
+                    } else if (getActivity() instanceof WeatherActivity) {
+                        WeatherActivity activity = (WeatherActivity) getActivity();
+                        activity.drawerLayout.closeDrawers();
+                        activity.swipeRefreshLayout.setRefreshing(true);
+                        activity.requestWeather(weatherCode);
+                    }
+
                 }
             }
         });

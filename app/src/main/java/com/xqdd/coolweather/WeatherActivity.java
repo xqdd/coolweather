@@ -1,16 +1,19 @@
 package com.xqdd.coolweather;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -51,6 +54,10 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView fluText;
     private TextView travelText;
     private TextView uvText;
+    public SwipeRefreshLayout swipeRefreshLayout;
+    private Button navButton;
+    public DrawerLayout drawerLayout;
+    private String weatherCode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,9 +71,11 @@ public class WeatherActivity extends AppCompatActivity {
             //设置状态栏为透明
             getWindow().setStatusBarColor(Color.TRANSPARENT);
         }
-
         setContentView(R.layout.activity_weather);
 
+
+        swipeRefreshLayout = findViewById(R.id.swipe_refresh);
+        swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
         bingPicImg = findViewById(R.id.bing_pic_img);
         weatherLayout = findViewById(R.id.weather_layout);
         titleCity = findViewById(R.id.title_city);
@@ -82,9 +91,17 @@ public class WeatherActivity extends AppCompatActivity {
         uvText = findViewById(R.id.uv_text);
         fluText = findViewById(R.id.flu_text);
         travelText = findViewById(R.id.travel_text);
+        drawerLayout = findViewById(R.id.draw_layout);
+        navButton = findViewById(R.id.nav_button);
 
+        navButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                drawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
 
-        SharedPreferences prefs = getDefaultSharedPreferences(this);
+        final SharedPreferences prefs = getDefaultSharedPreferences(this);
 
         String bingPic = prefs.getString("bing_pic", null);
         if (bingPic != null) {
@@ -93,18 +110,26 @@ public class WeatherActivity extends AppCompatActivity {
             loadBingPic();
         }
 
-        Weather weather = Utility.handleWeatherInfo(prefs.getString("weatherNowResponse", null),
+        final Weather weather = Utility.handleWeatherInfo(prefs.getString("weatherNowResponse", null),
                 prefs.getString("weatherSuggestionResponse", null),
                 prefs.getString("weatherDailyResponse", null));
 
 
         if (weather == null) {
-            String weatherCode = getIntent().getStringExtra("weatherCode");
+            weatherCode = getIntent().getStringExtra("weatherCode");
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(weatherCode);
         } else {
+            weatherCode = weather.getWeatherNow().location.id;
             showWeatherInfo(weather);
         }
+
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                requestWeather(weatherCode);
+            }
+        });
 
     }
 
@@ -136,11 +161,17 @@ public class WeatherActivity extends AppCompatActivity {
 
     }
 
-    private void requestWeather(String weatherCode) {
+    public void requestWeather(String weatherCode) {
         String weatherNowUrl = "https://api.seniverse.com/v3/weather/now.json?key=dz8fyfnz0jjaarcn&location=" + weatherCode + "&language=zh-Hans&unit=c";
         String weatherDailyUrl = "https://api.seniverse.com/v3/weather/daily.json?key=dz8fyfnz0jjaarcn&location=" + weatherCode + "&language=zh-Hans&unit=c&start=0&days=5";
         String weatherSuggestionUrl = "https://api.seniverse.com/v3/life/suggestion.json?key=dz8fyfnz0jjaarcn&location=" + weatherCode + "&language=zh-Hans";
 
+        final SharedPreferences pres = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this);
+        final SharedPreferences.Editor editor = pres.edit();
+
+        editor.putString("weatherCode", weatherCode);
+        editor.apply();
+        this.weatherCode=weatherCode;
 
         /**
          * 获取今日天气
@@ -148,15 +179,13 @@ public class WeatherActivity extends AppCompatActivity {
         HttpUtil.sendOkHttpRequest(weatherNowUrl, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+                showFailMsg();
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 final String weatherNowResponse = response.body().string();
                 if (!TextUtils.isEmpty(weatherNowResponse) && !weatherNowResponse.contains("status_code")) {
-                    SharedPreferences pres = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this);
-                    SharedPreferences.Editor editor = pres.edit();
                     editor.putString("weatherNowResponse", weatherNowResponse);
                     editor.apply();
                     final String weatherDailyResponse = (pres.getString("weatherDailyResponse", null));
@@ -176,15 +205,13 @@ public class WeatherActivity extends AppCompatActivity {
         HttpUtil.sendOkHttpRequest(weatherDailyUrl, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+                showFailMsg();
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 final String weatherDailyResponse = response.body().string();
                 if (!TextUtils.isEmpty(weatherDailyResponse) && !weatherDailyResponse.contains("status_code")) {
-                    SharedPreferences pres = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this);
-                    SharedPreferences.Editor editor = pres.edit();
                     editor.putString("weatherDailyResponse", weatherDailyResponse);
                     editor.apply();
                     final String weatherNowResponse = (pres.getString("weatherNowResponse", null));
@@ -204,15 +231,13 @@ public class WeatherActivity extends AppCompatActivity {
         HttpUtil.sendOkHttpRequest(weatherSuggestionUrl, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+                showFailMsg();
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 final String weatherSuggestionResponse = response.body().string();
                 if (!TextUtils.isEmpty(weatherSuggestionResponse) && !weatherSuggestionResponse.contains("status_code")) {
-                    SharedPreferences pres = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this);
-                    SharedPreferences.Editor editor = pres.edit();
                     editor.putString("weatherSuggestionResponse", weatherSuggestionResponse);
                     editor.apply();
                     final String weatherDailyResponse = (pres.getString("weatherDailyResponse", null));
@@ -229,6 +254,16 @@ public class WeatherActivity extends AppCompatActivity {
         loadBingPic();
 
 
+    }
+
+    private void showFailMsg() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        });
     }
 
     private void runOnUiThread(final String weatherNowResponse, final String weatherSuggestionResponse, final String weatherDailyResponse) {
@@ -288,17 +323,14 @@ public class WeatherActivity extends AppCompatActivity {
         uvText.setText(uv);
 
         weatherLayout.setVisibility(View.VISIBLE);
+        swipeRefreshLayout.setRefreshing(false);
     }
 
     public void showGetWeatherInfoFailedToast() {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(WeatherActivity.this, "暂不支持此地区的天气信息，请重新选择", Toast.LENGTH_SHORT).show();
-                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
-                editor.remove("weatherCode");
-                editor.apply();
-                startActivity(new Intent(WeatherActivity.this, MainActivity.class));
+                Toast.makeText(WeatherActivity.this, "获取天气信息出错", Toast.LENGTH_SHORT).show();
                 finish();
             }
         });
