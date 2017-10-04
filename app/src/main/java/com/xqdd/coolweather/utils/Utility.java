@@ -3,9 +3,14 @@ package com.xqdd.coolweather.utils;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.google.gson.Gson;
 import com.xqdd.coolweather.db.Area;
 import com.xqdd.coolweather.db.City;
 import com.xqdd.coolweather.db.Province;
+import com.xqdd.coolweather.gson.Weather;
+import com.xqdd.coolweather.gson.WeatherDaily;
+import com.xqdd.coolweather.gson.WeatherNow;
+import com.xqdd.coolweather.gson.WeatherSuggestion;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -100,4 +105,54 @@ public class Utility {
     }
 
 
+    public static WeatherNow handleWeatherNowResponse(String response) {
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+            JSONArray jsonArray = jsonObject.getJSONArray("results");
+            String resultContent = jsonArray.getJSONObject(0).toString();
+            return new Gson().fromJson(resultContent, WeatherNow.class);
+
+        } catch (JSONException e) {
+            Log.e(TAG, "handleWeatherNowResponse: ", e);
+        }
+        return null;
+    }
+
+    public static WeatherDaily handleWeatherDailyResponse(String response) {
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+            JSONArray jsonArray = jsonObject.getJSONArray("results");
+            String resultContent = jsonArray.getJSONObject(0).toString();
+            return new Gson().fromJson(resultContent, WeatherDaily.class);
+
+        } catch (JSONException e) {
+            Log.e(TAG, "handleWeatherNowResponse: ", e);
+        }
+        return null;
+    }
+
+    public static WeatherSuggestion handleWeatherSuggestionResponse(String response) {
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+            JSONArray jsonArray = jsonObject.getJSONArray("results");
+            String resultContent = jsonArray.getJSONObject(0).toString();
+            return new Gson().fromJson(resultContent, WeatherSuggestion.class);
+
+        } catch (JSONException e) {
+            Log.e(TAG, "handleWeatherNowResponse: ", e);
+        }
+        return null;
+    }
+
+
+    public static Weather handleWeatherInfo(String weatherNowResponse,
+                                            String weatherSuggestionResponse,
+                                            String weatherDailyResponse) {
+        if (weatherDailyResponse == null || weatherNowResponse == null || weatherSuggestionResponse == null) {
+            return null;
+        }
+        return new Weather(handleWeatherNowResponse(weatherNowResponse),
+                handleWeatherSuggestionResponse(weatherSuggestionResponse),
+                handleWeatherDailyResponse(weatherDailyResponse));
+    }
 }
