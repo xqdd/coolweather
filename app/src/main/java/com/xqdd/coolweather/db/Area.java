@@ -11,6 +11,28 @@ public class Area extends DataSupport {
     private String code;
     private String name;
 
+    private Integer cityId;
+
+
+    private Integer areaId;
+
+
+    public Integer getAreaId() {
+        return areaId;
+    }
+
+    public void setAreaId(Integer areaId) {
+        this.areaId = areaId;
+    }
+
+    public Integer getCityId() {
+        return cityId;
+    }
+
+    public void setCityId(Integer cityId) {
+        this.cityId = cityId;
+    }
+
     public Integer getId() {
         return id;
     }
